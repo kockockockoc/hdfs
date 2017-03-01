@@ -51,6 +51,21 @@ func New(address string) (*Client, error) {
 	return NewForUser(address, username)
 }
 
+// NewSASL returns a connected Client authenticated using SASL, or an error if
+// it can't connect.
+func NewSASL(address string, user string) (*Client, error) {
+	namenode, err := rpc.NewNamenodeConnectionWithOptions(rpc.Options{
+		Addr:    address,
+		User:    user,
+		UseSASL: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &Client{namenode: namenode}, nil
+}
+
 // getNameNodeFromConf return a datanode from the system hadoop configuration
 func getNameNodeFromConf() (string, error) {
 	hadoopConf := LoadHadoopConf("")

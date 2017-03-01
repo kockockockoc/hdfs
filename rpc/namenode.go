@@ -16,10 +16,19 @@ const (
 	rpcVersion           = 0x09
 	serviceClass         = 0x0
 	authProtocol         = 0x0
+	authProtocolKerberos = 0xdf
 	protocolClass        = "org.apache.hadoop.hdfs.protocol.ClientProtocol"
 	protocolClassVersion = 1
 	handshakeCallID      = -3
 )
+
+// Options for NewNamenodeConnectionWithOptions constructor.
+type Options struct {
+	User    string
+	Addr    string   // for Dial
+	Conn    net.Conn // for wrap existing connection
+	UseSASL bool     // enable Kerberos auth
+}
 
 // NamenodeConnection represents an open connection to a namenode.
 type NamenodeConnection struct {
@@ -27,6 +36,7 @@ type NamenodeConnection struct {
 	clientName       string
 	currentRequestID int
 	user             string
+	useSASL          bool
 	conn             net.Conn
 	reqLock          sync.Mutex
 }
@@ -61,12 +71,10 @@ func (err *NamenodeError) Error() string {
 // You probably want to use hdfs.New instead, which provides a higher-level
 // interface.
 func NewNamenodeConnection(address, user string) (*NamenodeConnection, error) {
-	conn, err := net.DialTimeout("tcp", address, connectTimeout)
-	if err != nil {
-		return nil, err
-	}
-
-	return WrapNamenodeConnection(conn, user)
+	return NewNamenodeConnectionWithOptions(Options{
+		Addr: address,
+		User: user,
+	})
 }
 
 // WrapNamenodeConnection wraps an existing net.Conn to a Namenode, and preforms
@@ -77,15 +85,37 @@ func NewNamenodeConnection(address, user string) (*NamenodeConnection, error) {
 func WrapNamenodeConnection(conn net.Conn, user string) (*NamenodeConnection, error) {
 	// The ClientID is reused here both in the RPC headers (which requires a
 	// "globally unique" ID) and as the "client name" in various requests.
+	return NewNamenodeConnectionWithOptions(Options{
+		Conn: conn,
+		User: user,
+	})
+}
+
+func NewNamenodeConnectionWithOptions(options Options) (*NamenodeConnection, error) {
+	if options.Conn == nil && options.Addr == "" {
+		return nil, errors.New("NameNode addr or existing net.Conn not specified")
+	}
+
+	var err error
+	conn := options.Conn
+
+	if conn == nil {
+		conn, err = net.DialTimeout("tcp", options.Addr, connectTimeout)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	clientId := newClientID()
 	c := &NamenodeConnection{
 		clientId:   clientId,
 		clientName: "go-hdfs-" + string(clientId),
-		user:       user,
+		user:       options.User,
 		conn:       conn,
+		useSASL:    options.UseSASL,
 	}
 
-	err := c.writeNamenodeHandshake()
+	err = c.writeNamenodeHandshake()
 	if err != nil {
 		conn.Close()
 		return nil, fmt.Errorf("Error performing handshake: %s", err)
@@ -198,7 +228,11 @@ func (c *NamenodeConnection) readResponse(method string, resp proto.Message) err
 // +-----------------------------------------------------------+
 // |  RPC service class, 1 byte (0x00)                         |
 // +-----------------------------------------------------------+
-// |  Auth protocol, 1 byte (Auth method None = 0x00)          |
+// |  Auth protocol, 1 byte:                                   |
+// |  method None = 0x00                                       |
+// |  method Kerberos = 0xdf                                   |
+// +-----------------------------------------------------------+
+// |  Optional SASL round-trip                                 |
 // +-----------------------------------------------------------+
 // |  uint32 length of the next two parts                      |
 // +-----------------------------------------------------------+
@@ -210,19 +244,37 @@ func (c *NamenodeConnection) writeNamenodeHandshake() error {
 	c.reqLock.Lock()
 	defer c.reqLock.Unlock()
 
+	var err error
+
+	authByte := byte(authProtocol)
+	if c.useSASL {
+		authByte = authProtocolKerberos
+	}
+
 	rpcHeader := []byte{
 		0x68, 0x72, 0x70, 0x63, // "hrpc"
-		rpcVersion, serviceClass, authProtocol,
+		rpcVersion, serviceClass, authByte,
+	}
+
+	if _, err = c.conn.Write(rpcHeader); err != nil {
+		return err
+	}
+
+	if c.useSASL {
+		if err = SASLConnect(c); err != nil {
+			return err
+		}
 	}
 
 	rrh := newRPCRequestHeader(handshakeCallID, c.clientId)
 	cc := newConnectionContext(c.user)
+
 	packet, err := makeRPCPacket(rrh, cc)
 	if err != nil {
 		return err
 	}
 
-	_, err = c.conn.Write(append(rpcHeader, packet...))
+	_, err = c.conn.Write(packet)
 	return err
 }
 
