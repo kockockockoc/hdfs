@@ -245,7 +245,7 @@ func (f *FileWriter) startNewBlock() error {
 	}
 	addBlockResp := &hdfs.AddBlockResponseProto{}
 
-	err := f.client.namenode.Execute("addBlock", addBlockReq, addBlockResp)
+	err = f.client.namenode.Execute("addBlock", addBlockReq, addBlockResp)
 	if err != nil {
 		if nnErr, ok := err.(*rpc.NamenodeError); ok {
 			err = interpretException(nnErr.Exception, err)
