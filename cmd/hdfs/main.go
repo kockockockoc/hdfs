@@ -24,6 +24,7 @@ Valid commands:
   touch [-amc] FILE...
   chmod [-R] OCTAL-MODE FILE...
   chown [-R] OWNER[:GROUP] FILE...
+  getfacl [-R] FILE...
   cat SOURCE...
   head [-n LINES | -c BYTES] SOURCE...
   tail [-n LINES | -c BYTES] SOURCE...
@@ -60,6 +61,9 @@ Valid commands:
 	chownOpts = getopt.New()
 	chownR    = chownOpts.Bool('R')
 
+	getfaclOpts = getopt.New()
+	getfaclR    = getfaclOpts.Bool('R')
+
 	headTailOpts = getopt.New()
 	headtailn    = headTailOpts.Int64('n', -1)
 	headtailc    = headTailOpts.Int64('c', -1)
@@ -85,6 +89,7 @@ func init() {
 	touchOpts.SetUsage(printHelp)
 	chmodOpts.SetUsage(printHelp)
 	chownOpts.SetUsage(printHelp)
+	getfaclOpts.SetUsage(printHelp)
 	headTailOpts.SetUsage(printHelp)
 	duOpts.SetUsage(printHelp)
 	getmergeOpts.SetUsage(printHelp)
@@ -122,6 +127,9 @@ func main() {
 	case "chmod":
 		chmodOpts.Parse(argv)
 		chmod(chmodOpts.Args(), *chmodR)
+	case "getfacl":
+		getfaclOpts.Parse(argv)
+		getfacl(getfaclOpts.Args(), *getfaclR)
 	case "cat":
 		cat(argv[1:])
 	case "head", "tail":
