@@ -45,7 +45,11 @@ func getfacl(paths []string, recursive bool) {
 		fmt.Printf("# perm: %s\n", fi.Mode().String())
 
 		if facl.Sticky() == true {
-			fmt.Printf("# flags: --t\n")
+			if fi.Mode()&0001 != 0 {
+				fmt.Printf("# flags: --t\n")
+			} else {
+				fmt.Printf("# flags: --T\n")
+			}
 		}
 		for _, e := range facl.Entries() {
 			if e.GetScope() == acl.AclEntryProto_DEFAULT {
