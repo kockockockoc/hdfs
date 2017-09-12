@@ -65,7 +65,7 @@ func (c *Client) CreateFile(name string, replication int, blockSize int64, perm 
 	err := c.namenode.Execute("create", createReq, createResp)
 	if err != nil {
 		if nnErr, ok := err.(*rpc.NamenodeError); ok {
-			err = interpretException(nnErr.Exception, err)
+			err = nnErr
 		}
 
 		return nil, &os.PathError{"create", name, err}
@@ -98,7 +98,7 @@ func (c *Client) Append(name string) (*FileWriter, error) {
 	err = c.namenode.Execute("append", appendReq, appendResp)
 	if err != nil {
 		if nnErr, ok := err.(*rpc.NamenodeError); ok {
-			err = interpretException(nnErr.Exception, err)
+			err = nnErr
 		}
 
 		return nil, &os.PathError{"append", name, err}
@@ -232,7 +232,7 @@ func (f *FileWriter) startNewBlock() error {
 	err := f.client.namenode.Execute("renewLease", renewLeaseReq, renewLeaseResp)
 	if err != nil {
 		if nnErr, ok := err.(*rpc.NamenodeError); ok {
-			err = interpretException(nnErr.Exception, err)
+			err = nnErr
 		}
 		
 		return &os.PathError{"create", f.name, err}
@@ -248,7 +248,7 @@ func (f *FileWriter) startNewBlock() error {
 	err = f.client.namenode.Execute("addBlock", addBlockReq, addBlockResp)
 	if err != nil {
 		if nnErr, ok := err.(*rpc.NamenodeError); ok {
-			err = interpretException(nnErr.Exception, err)
+			err = nnErr
 		}
 
 		return &os.PathError{"create", f.name, err}

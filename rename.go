@@ -31,7 +31,7 @@ func (c *Client) Rename(oldpath, newpath string, flags ...Flag) error {
 	err = c.namenode.Execute("rename2", req, resp)
 	if err != nil {
 		if nnErr, ok := err.(*rpc.NamenodeError); ok {
-			err = interpretException(nnErr.Exception, err)
+			err = nnErr
 		}
 
 		return &os.PathError{"rename", oldpath, err}

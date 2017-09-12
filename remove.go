@@ -31,7 +31,7 @@ func (c *Client) Remove(name string, flags ...Flag) error {
 	err = c.namenode.Execute("delete", req, resp)
 	if err != nil {
 		if nnErr, ok := err.(*rpc.NamenodeError); ok {
-			err = interpretException(nnErr.Exception, err)
+			err = nnErr
 		}
 
 		return &os.PathError{"remove", name, err}

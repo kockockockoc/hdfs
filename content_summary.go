@@ -35,7 +35,7 @@ func (c *Client) getContentSummary(name string) (*ContentSummary, error) {
 	err := c.namenode.Execute("getContentSummary", req, resp)
 	if err != nil {
 		if nnErr, ok := err.(*rpc.NamenodeError); ok {
-			err = interpretException(nnErr.Exception, err)
+			err = nnErr
 		}
 
 		return nil, err
