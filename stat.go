@@ -34,7 +34,7 @@ func (c *Client) getFileInfo(name string) (os.FileInfo, error) {
 	err := c.namenode.Execute("getFileInfo", req, resp)
 	if err != nil {
 		if nnErr, ok := err.(*rpc.NamenodeError); ok {
-			err = interpretException(nnErr.Exception, err)
+			err = nnErr
 		}
 
 		return nil, err

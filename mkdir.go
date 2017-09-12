@@ -45,7 +45,7 @@ func (c *Client) mkdir(dirname string, perm os.FileMode, createParent bool) erro
 	err = c.namenode.Execute("mkdirs", req, resp)
 	if err != nil {
 		if nnErr, ok := err.(*rpc.NamenodeError); ok {
-			err = interpretException(nnErr.Exception, err)
+			err = nnErr
 		}
 
 		return &os.PathError{"mkdir", dirname, err}
