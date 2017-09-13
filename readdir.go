@@ -52,7 +52,7 @@ func (c *Client) getPartialDirList(dirname string, after string) ([]os.FileInfo,
 	err := c.namenode.Execute("getListing", req, resp)
 	if err != nil {
 		if nnErr, ok := err.(*rpc.NamenodeError); ok {
-			err = interpretException(nnErr.Exception, err)
+			err = nnErr
 		}
 
 		return nil, 0, &os.PathError{"readdir", dirname, err}

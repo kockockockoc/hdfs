@@ -20,7 +20,7 @@ func (c *Client) Chmod(name string, perm os.FileMode) error {
 	err := c.namenode.Execute("setPermission", req, resp)
 	if err != nil {
 		if nnErr, ok := err.(*rpc.NamenodeError); ok {
-			err = interpretException(nnErr.Exception, err)
+			err = nnErr
 		}
 
 		return &os.PathError{"chmod", name, err}
@@ -45,7 +45,7 @@ func (c *Client) Chown(name string, user, group string) error {
 	err := c.namenode.Execute("setOwner", req, resp)
 	if err != nil {
 		if nnErr, ok := err.(*rpc.NamenodeError); ok {
-			err = interpretException(nnErr.Exception, err)
+			err = nnErr
 		}
 
 		return &os.PathError{"chown", name, err}
@@ -66,7 +66,7 @@ func (c *Client) Chtimes(name string, atime time.Time, mtime time.Time) error {
 	err := c.namenode.Execute("setTimes", req, resp)
 	if err != nil {
 		if nnErr, ok := err.(*rpc.NamenodeError); ok {
-			err = interpretException(nnErr.Exception, err)
+			err = nnErr
 		}
 
 		return &os.PathError{"chtimes", name, err}

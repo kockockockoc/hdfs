@@ -29,7 +29,7 @@ func (c *Client) StatFs() (FsInfo, error) {
 	err := c.namenode.Execute("getFsStats", req, resp)
 	if err != nil {
 		if nnErr, ok := err.(*rpc.NamenodeError); ok {
-			err = interpretException(nnErr.Exception, err)
+			err = nnErr
 		}
 		return FsInfo{}, err
 	}

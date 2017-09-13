@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strings"
 	"sync"
 
 	hadoop "github.com/colinmarc/hdfs/protocol/hadoop_common"
@@ -60,6 +61,9 @@ func (err *NamenodeError) Error() string {
 	s := fmt.Sprintf("%s call failed with %s", err.Method, err.Desc())
 	if err.Exception != "" {
 		s += fmt.Sprintf(" (%s)", err.Exception)
+	}
+	if err.Message != "" {
+		s += "\n" + strings.Split(err.Message, "\n")[0]
 	}
 
 	return s
