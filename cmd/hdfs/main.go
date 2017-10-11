@@ -190,7 +190,16 @@ func getClient(namenode string) (*hdfs.Client, error) {
 		return nil, errors.New("Couldn't find a namenode to connect to. You should specify hdfs://<namenode>:<port> in your paths. Alternatively, set HADOOP_NAMENODE or HADOOP_CONF_DIR in your environment.")
 	}
 
-	c, err := hdfs.New(namenode)
+	kerberosUser := os.Getenv("HADOOP_KERBEROS_USER")
+
+	var c *hdfs.Client
+	var err error
+
+	if kerberosUser != "" {
+		c, err = hdfs.NewSASL(namenode, kerberosUser)
+	} else {
+		c, err = hdfs.New(namenode)
+	}
 	if err != nil {
 		return nil, err
 	}

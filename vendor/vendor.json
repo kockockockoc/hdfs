@@ -9,6 +9,12 @@
 			"revisionTime": "2016-10-29T20:57:26Z"
 		},
 		{
+			"checksumSHA1": "0Y1UnkqeHnTfhvYm3XG2Yqt2TLQ=",
+			"path": "github.com/freddierice/go-sasl",
+			"revision": "ec45f97089cf4f3dffc06e782f0f3b8681e63b19",
+			"revisionTime": "2017-04-04T20:28:30Z"
+		},
+		{
 			"checksumSHA1": "kBeNcaKk56FguvPSUCEaH6AxpRc=",
 			"path": "github.com/golang/protobuf/proto",
 			"revision": "8ee79997227bf9b34611aee7946ae64735e6fd93",

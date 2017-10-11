@@ -10,7 +10,13 @@ import (
 )
 
 // Remove removes the named file or directory.
-func (c *Client) Remove(name string) error {
+func (c *Client) Remove(name string, flags ...Flag) error {
+	flag := mergeFlags(flags)
+	flagRecursive := true
+	if flag&NoRecursive != 0 {
+		flagRecursive = false
+	}
+
 	_, err := c.getFileInfo(name)
 	if err != nil {
 		return &os.PathError{"remove", name, err}
@@ -18,14 +24,14 @@ func (c *Client) Remove(name string) error {
 
 	req := &hdfs.DeleteRequestProto{
 		Src:       proto.String(name),
-		Recursive: proto.Bool(true),
+		Recursive: proto.Bool(flagRecursive),
 	}
 	resp := &hdfs.DeleteResponseProto{}
 
 	err = c.namenode.Execute("delete", req, resp)
 	if err != nil {
 		if nnErr, ok := err.(*rpc.NamenodeError); ok {
-			err = interpretException(nnErr.Exception, err)
+			err = nnErr
 		}
 
 		return &os.PathError{"remove", name, err}
