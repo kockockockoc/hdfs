@@ -222,6 +222,22 @@ func (f *FileWriter) startNewBlock() error {
 		previous = f.block.GetB()
 	}
 
+	// execute renewLease on every NewBlock (dirty hack)
+	// https://github.com/colinmarc/hdfs/issues/60
+	renewLeaseReq := &hdfs.RenewLeaseRequestProto{
+		ClientName: proto.String(f.client.namenode.ClientName()),
+	}
+	renewLeaseResp := &hdfs.RenewLeaseResponseProto{}
+	
+	err := f.client.namenode.Execute("renewLease", renewLeaseReq, renewLeaseResp)
+	if err != nil {
+		if nnErr, ok := err.(*rpc.NamenodeError); ok {
+			err = interpretException(nnErr.Exception, err)
+		}
+		
+		return &os.PathError{"create", f.name, err}
+	}
+	
 	addBlockReq := &hdfs.AddBlockRequestProto{
 		Src:        proto.String(f.name),
 		ClientName: proto.String(f.client.namenode.ClientName()),
@@ -229,7 +245,7 @@ func (f *FileWriter) startNewBlock() error {
 	}
 	addBlockResp := &hdfs.AddBlockResponseProto{}
 
-	err := f.client.namenode.Execute("addBlock", addBlockReq, addBlockResp)
+	err = f.client.namenode.Execute("addBlock", addBlockReq, addBlockResp)
 	if err != nil {
 		if nnErr, ok := err.(*rpc.NamenodeError); ok {
 			err = interpretException(nnErr.Exception, err)
