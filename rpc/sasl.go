@@ -16,6 +16,7 @@ type saslConnection struct {
 
 func SASLConnect(c *NamenodeConnection) error {
 	s := &saslConnection{c, nil}
+	defer s.free()
 
 	// negotiate
 	if err := s.send(&hadoop.RpcSaslProto{State: hadoop.RpcSaslProto_NEGOTIATE.Enum()}); err != nil {
@@ -104,6 +105,12 @@ ReadLoop:
 	}
 
 	return nil
+}
+
+func (s *saslConnection) free() {
+	if s != nil && s.client != nil {
+		s.client.Free()
+	}
 }
 
 func (s *saslConnection) send(message proto.Message) error {
